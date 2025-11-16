@@ -61,7 +61,7 @@ pipeline {
                         git add -A
                         git commit -m "Deploy from Jenkins - ${BUILD_NUMBER}"
                         git branch -M main
-                        git remote add origin https://${GITHUB_TOKEN}@github.com/${REPO}.git
+                        sh "git remote add origin https://${GITHUB_TOKEN}@github.com/Banjer71/vite-jenkins-pipeline.git"
                         git push --force origin main:${BRANCH}
                     '''
                 }
