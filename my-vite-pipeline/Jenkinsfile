@@ -12,6 +12,14 @@ pipeline {
         // Optionally set CUSTOM_DOMAIN = "mydomain.com" if you want Jenkins to write CNAME
     }
 
+    stage('Check Node') {
+        steps {
+            sh 'node -v'
+            sh 'npm -v'
+        }
+    }
+
+
     stages {
         stage('Install dependencies') {
             steps {
