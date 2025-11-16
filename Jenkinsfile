@@ -6,8 +6,8 @@ pipeline {
     }
 
     environment {
-        GITHUB_TOKEN = credentials('github-token-id') // Replace with your Jenkins GitHub token ID
-        REPO = 'Banjer71/vite-jenkins-pipeline'
+        GITHUB_TOKEN = credentials('github-token') // Replace with your Jenkins GitHub token ID
+        REPO = "github.com/Banjer71/vite-jenkins-pipeline"
         BRANCH = 'gh-pages'
         BASE_PATH = '/vite-jenkins-pipeline/'
     }
