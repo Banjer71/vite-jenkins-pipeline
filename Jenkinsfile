@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        GITHUB_TOKEN = credentials('github-token') // Replace with your Jenkins GitHub token ID
+        GITHUB_TOKEN = credentials('github-token') // Jenkins GitHub token ID
         REPO = "github.com/Banjer71/vite-jenkins-pipeline"
         BRANCH = 'gh-pages'
         BASE_PATH = '/vite-jenkins-pipeline/'
@@ -24,7 +24,12 @@ pipeline {
                 sh '''
                     echo "Setting Vite base path for GitHub Pages"
                     cp vite.config.js vite.config.js.bak
-                    sed -i "s|defineConfig({|defineConfig({ base: '${BASE_PATH}',|g" vite.config.js
+                    # Replace existing base if present, otherwise add it
+                    if grep -q "base:" vite.config.js; then
+                        sed -i "s|base:.*|base: '${BASE_PATH}',|g" vite.config.js
+                    else
+                        sed -i "s|defineConfig({|defineConfig({ base: '${BASE_PATH}',|g" vite.config.js
+                    fi
                 '''
             }
         }
@@ -61,7 +66,7 @@ pipeline {
                         git add -A
                         git commit -m "Deploy from Jenkins - ${BUILD_NUMBER}"
                         git branch -M main
-                        sh "git remote add origin https://${GITHUB_TOKEN}@github.com/Banjer71/vite-jenkins-pipeline.git"
+                        git remote add origin https://${GITHUB_TOKEN}@${REPO}.git
                         git push --force origin main:${BRANCH}
                     '''
                 }
