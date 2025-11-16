@@ -19,8 +19,12 @@ pipeline {
         // Step 2: Check Node/NPM versions
         stage('Check Node') {
             steps {
-                sh 'node -v'
-                sh 'npm -v'
+                script {
+                    def nodeHome = tool name: 'node22', type: 'NodeJS'
+                    env.PATH = "${nodeHome}/bin:${env.PATH}"
+                    sh 'node -v'
+                    sh 'npm -v'
+                }
             }
         }
 
