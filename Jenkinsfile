@@ -2,33 +2,41 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_TOKEN = credentials('github-token')   // Jenkins Credential ID
-        REPO = "github.com/Banjer71/vite-jenkins-pipeline"
-        BRANCH = "gh-pages"
+        GITHUB_TOKEN = credentials('GITHUB_TOKEN') // Make sure you have a Jenkins credential for GitHub
     }
 
     stages {
-
-        // Step 1: Install NodeJS tool
-        stage('Declarative: Tool Install') {
+        stage('Checkout SCM') {
             steps {
-                tool name: 'node22', type: 'NodeJS'
+                checkout scm
             }
         }
 
-        // Step 2: Check Node/NPM versions
-        stage('Check Node') {
+        stage('Verify NodeJS Tool') {
             steps {
                 script {
-                    def nodeHome = tool name: 'node22', type: 'NodeJS'
-                    env.PATH = "${nodeHome}/bin:${env.PATH}"
-                    sh 'node -v'
-                    sh 'npm -v'
+                    try {
+                        // Use the NodeJS tool configured in Jenkins → Global Tool Configuration
+                        def nodeHome = tool name: 'node22', type: 'NodeJS'
+                        env.PATH = "${nodeHome}/bin:${env.PATH}"
+                        def nodeVersion = sh(script: 'node -v', returnStdout: true).trim()
+                        echo "NodeJS found at ${nodeHome}, version: ${nodeVersion}"
+
+                        // Check Node version >= 22.12
+                        def versionNumbers = nodeVersion.replace('v','').tokenize('.').collect{ it.toInteger() }
+                        if (versionNumbers[0] < 22 || (versionNumbers[0] == 22 && versionNumbers[1] < 12)) {
+                            error "Node.js version must be 22.12+ for Vite. Found: ${nodeVersion}"
+                        }
+
+                        // Print npm version
+                        sh 'npm -v'
+                    } catch (Exception e) {
+                        error "NodeJS tool 'node22' not found! Please configure it in Jenkins → Global Tool Configuration."
+                    }
                 }
             }
         }
 
-        // Step 3: Configure Vite base path for GitHub Pages
         stage('Configure Vite base path') {
             steps {
                 sh '''
@@ -39,46 +47,52 @@ pipeline {
             }
         }
 
-        // Step 4: Install dependencies
         stage('Install dependencies') {
             steps {
                 sh 'npm ci'
             }
         }
 
-        // Step 5: Build the Vite app
         stage('Build Vite app') {
             steps {
                 sh 'npm run build'
             }
         }
 
-        // Step 6: Prepare deployment folder
         stage('Prepare deployment folder') {
             steps {
                 sh '''
                     rm -rf deploy
                     mkdir deploy
-                    cp -R dist/* deploy/
+                    cp -R dist/assets dist/index.html dist/vite.svg deploy/
                 '''
             }
         }
 
-        // Step 7: Deploy to GitHub Pages
         stage('Deploy to GitHub Pages') {
             steps {
-                sh '''
-                    cd deploy
-                    git init
-                    git config user.name "Jenkins CI"
-                    git config user.email "jenkins@example.com"
-                    git add -A
-                    git commit -m "Deploy from Jenkins - ${BUILD_NUMBER}"
-                    git branch -M main
-                    git remote add origin https://${GITHUB_TOKEN}@${REPO}
-                    git push --force origin main:${BRANCH}
-                '''
+                dir('deploy') {
+                    sh '''
+                        git init
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins@example.com"
+                        git add -A
+                        git commit -m "Deploy from Jenkins - ${BUILD_NUMBER}"
+                        git branch -M main
+                        git remote add origin https://${GITHUB_TOKEN}@github.com/Banjer71/vite-jenkins-pipeline.git
+                        git push --force origin main:gh-pages
+                    '''
+                }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment complete! Check your GitHub Pages at https://Banjer71.github.io/vite-jenkins-pipeline/"
+        }
+        failure {
+            echo "Pipeline failed. Check logs for details."
         }
     }
 }
