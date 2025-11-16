@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_TOKEN = credentials('GITHUB_TOKEN') // Make sure you have a Jenkins credential for GitHub
+        GITHUB_TOKEN = credentials('github-token')
+        REPO = "github.com/Banjer71/vite-jenkins-pipeline"
+        BRANCH = "gh-pages"
     }
 
     stages {
